@@ -43,7 +43,7 @@ function Add-SinkEventLog {
 		[Parameter(Mandatory = $false)]
 		[string]$ManageEventSource = $false,
 		[Parameter(Mandatory = $false)]
-		[string]$OutputTemplate = '{Message}{NewLine}{Exception}',
+		[string]$OutputTemplate = '{Message}{NewLine}{Exception}{ErrorRecord}',
 		[Parameter(Mandatory = $false)]
 		[System.IFormatProvider]$FormatProvider = $null,
 		[Parameter(Mandatory = $false)]
