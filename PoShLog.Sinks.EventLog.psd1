@@ -98,7 +98,7 @@ PrivateData = @{
     PSData = @{
 
         # Tags applied to this module. These help with module discovery in online galleries.
-        Tags = 'eventlog','Log','Logging','Serilog','File','filelog','logfile','error-log','console','event','serilog-sink','serilog-for-powershell','wrapper','sinks','PSEdition_Desktop','PSEdition_Core','Windows','Linux','MacOS'
+        Tags = 'eventlog','Log','Logging','Serilog','File','filelog','logfile','error-log','console','event','serilog-sink','serilog-for-powershell','wrapper','sinks','PSEdition_Desktop','PSEdition_Core','Windows'
 
         # A URL to the license for this module.
         LicenseUri = 'https://github.com/PoShLog/PoShLog.Sinks.EventLog/blob/master/LICENSE'
