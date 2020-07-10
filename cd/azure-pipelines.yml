@@ -19,6 +19,6 @@ steps:
     targetType: 'inline'
     script: |
       Install-PackageProvider -Name NuGet -Force -Scope CurrentUser
-      Install-Module -Name PoShTools -Force -Verbose -Scope CurrentUser
-      Import-Module -Name PoShTools
+      Install-Module -Name PoShLog.Tools -Force -Verbose -Scope CurrentUser
+      Import-Module -Name PoShLog.Tools
       Bootstrap '.\cd\RequiredModules.psd1'
