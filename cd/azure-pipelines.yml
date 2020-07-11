@@ -24,7 +24,7 @@ steps:
       Bootstrap '.\cd\RequiredModules.psd1'
       Expand-VersionFromBranch -BranchName $(Build.SourceBranch)
 
-- powershell: Invoke-Build '.\src\PoShLog.Sinks.EventLog.Build.ps1' -Configuration 'Prod' -Task Clean, BuildDependencies, UpdateManifest, CopyModuleFiles -ModuleVersion "$(MajorVersion).$(MinorVersion).$(BugfixVersion)" -PreRelease "$(VersionLabel)"
+- powershell: Invoke-Build '.\src\PoShLog.Sinks.EventLog.Build.ps1' -Configuration 'Dev' -Task Clean, BuildDependencies, UpdateManifest, CopyModuleFiles, PublishModule -ModuleVersion "$(MajorVersion).$(MinorVersion).$(BugfixVersion)" -PreRelease "$(VersionLabel)"
   displayName: 'Publish PowerShell Module'
   env:
     psgallery: $(NugetAPIKey)
@@ -43,3 +43,32 @@ steps:
     PathtoPublish: '$(Build.ArtifactStagingDirectory)'
     ArtifactName: 'Module'
     publishLocation: 'Container'
+
+- task: PowerShell@2
+  displayName: Git commit & push
+  inputs:
+    targetType: 'inline'
+    script: |
+      Import-Module -Name PoShPipeline
+      
+      git --version
+      git config --global user.email "email@tomasbouda.cz"
+      git config --global user.name "CI-Build"
+      Invoke-Git 'status'
+      Invoke-Git 'checkout releases/$(Build.SourceBranchName)'
+      Invoke-Git 'status'
+      Invoke-Git 'add -A'
+      Invoke-Git 'tag v$(MajorVersion).$(MinorVersion).$(BugfixVersion)$(VersionLabel)'
+      Invoke-Git 'commit -m ''Released v$(MajorVersion).$(MinorVersion).$(BugfixVersion)-$(VersionLabel) [skip ci]'''
+      Invoke-Git 'push'
+      
+    ignoreLASTEXITCODE: true
+
+- task: PowerShell@2
+  displayName: Create PullRequest
+  inputs:
+    targetType: 'inline'
+    script: |
+      Import-Module -Name PoShPipeline
+      $ownerAndRepo = '$(Build.Repository.Name)' -split '/'
+      New-PullRequest -Owner $ownerAndRepo[0] -Repo $ownerAndRepo[1] -AuthToken '$(GitHubAuthToken)' -Title 'Released v$(MajorVersion).$(MinorVersion).$(BugfixVersion)-$(VersionLabel)' -Head 'releases/$(Build.SourceBranchName)' -Base 'master'
