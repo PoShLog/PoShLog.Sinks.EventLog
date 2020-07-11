@@ -9,6 +9,10 @@ pr: none
 pool:
   vmImage: 'windows-latest'
 
+variables:
+  moduleName: 'PoShLog.Sinks.EventLog'
+  buildConfiguration: 'Prod'
+
 steps:
 - checkout: self
   persistCredentials: true
@@ -24,7 +28,7 @@ steps:
       Bootstrap '.\cd\RequiredModules.psd1'
       Expand-VersionFromBranch -BranchName $(Build.SourceBranch)
 
-- powershell: Invoke-Build '.\src\PoShLog.Sinks.EventLog.Build.ps1' -Configuration 'Dev' -Task Clean, BuildDependencies, UpdateManifest, CopyModuleFiles, PublishModule -ModuleVersion "$(MajorVersion).$(MinorVersion).$(BugfixVersion)" -PreRelease "$(VersionLabel)"
+- powershell: Invoke-Build '.\src\$(moduleName).Build.ps1' -Configuration '$(buildConfiguration)' -Task Clean, BuildDependencies, UpdateManifest, CopyModuleFiles, PublishModule -ModuleVersion "$(MajorVersion).$(MinorVersion).$(BugfixVersion)" -PreRelease "$(VersionLabel)"
   displayName: 'Publish PowerShell Module'
   env:
     psgallery: $(NugetAPIKey)
@@ -32,10 +36,10 @@ steps:
 - task: ArchiveFiles@2
   displayName: Archive module files
   inputs:
-    rootFolderOrFile: '.\src\output\PoShLog.Sinks.EventLog'
+    rootFolderOrFile: '.\src\output\$(moduleName)'
     includeRootFolder: true
     archiveType: 'zip'
-    archiveFile: '$(Build.ArtifactStagingDirectory)/PoShLog.Sinks.EventLog_$(FullVersion).zip'
+    archiveFile: '$(Build.ArtifactStagingDirectory)/$(moduleName)_$(FullVersion).zip'
     replaceExistingArchive: true
 
 - task: PublishBuildArtifacts@1
