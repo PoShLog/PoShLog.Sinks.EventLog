@@ -31,7 +31,7 @@ steps:
 - powershell: Invoke-Build '.\src\$(moduleName).Build.ps1' -Configuration '$(buildConfiguration)' -Task Clean, BuildDependencies, UpdateManifest, CopyModuleFiles, PublishModule -ModuleVersion "$(MajorVersion).$(MinorVersion).$(BugfixVersion)" -PreRelease "$(VersionLabel)"
   displayName: 'Publish PowerShell Module'
   env:
-    psgallery: $(NugetAPIKey)
+    psgalleryapikey: $(psgalleryapikey)
 
 - task: ArchiveFiles@2
   displayName: Archive module files
