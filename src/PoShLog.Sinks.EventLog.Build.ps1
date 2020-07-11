@@ -3,9 +3,13 @@ param (
 	[Version]$ModuleVersion,
 
 	[Parameter(Mandatory = $false)]
+	[AllowEmptyString()]
+	[AllowNull()]
 	[string]$PreRelease,
 
 	[Parameter(Mandatory = $false)]
+	[AllowEmptyString()]
+	[AllowNull()]
 	[string]$ReleaseNotes,
 
 	[Parameter(Mandatory = $false)]
