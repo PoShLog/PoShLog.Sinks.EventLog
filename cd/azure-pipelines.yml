@@ -30,9 +30,16 @@ steps:
     psgallery: $(NugetAPIKey)
 
 - task: ArchiveFiles@2
+  displayName: Archive module files
   inputs:
     rootFolderOrFile: '.\src\output\PoShLog.Sinks.EventLog'
     includeRootFolder: true
     archiveType: 'zip'
-    archiveFile: '$(Build.ArtifactStagingDirectory)/PoShLog.Sinks.EventLog_$(Build.BuildId).zip'
+    archiveFile: '$(Build.ArtifactStagingDirectory)/PoShLog.Sinks.EventLog_$(MajorVersion).$(MinorVersion).$(BugfixVersion)$(VersionLabel).zip'
     replaceExistingArchive: true
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+    ArtifactName: 'Module'
+    publishLocation: 'Container'
