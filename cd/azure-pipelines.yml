@@ -23,6 +23,7 @@ steps:
       Import-Module -Name PoShLog.Tools
       Bootstrap '.\cd\RequiredModules.psd1'
       Expand-VersionFromBranch -BranchName $(Build.SourceBranch)
+    pwsh: true
 
 - powershell: Invoke-Build '.\src\PoShLog.Sinks.EventLog.Build.ps1' -Configuration 'Dev' -Task Clean, BuildDependencies, UpdateManifest, CopyModuleFiles, PublishModule -ModuleVersion "$(MajorVersion).$(MinorVersion).$(BugfixVersion)" -PreRelease "$(VersionLabel)"
   displayName: 'Publish PowerShell Module'
@@ -35,7 +36,7 @@ steps:
     rootFolderOrFile: '.\src\output\PoShLog.Sinks.EventLog'
     includeRootFolder: true
     archiveType: 'zip'
-    archiveFile: '$(Build.ArtifactStagingDirectory)/PoShLog.Sinks.EventLog_$(MajorVersion).$(MinorVersion).$(BugfixVersion)$(VersionLabel).zip'
+    archiveFile: '$(Build.ArtifactStagingDirectory)/PoShLog.Sinks.EventLog_$(FullVersion).zip'
     replaceExistingArchive: true
 
 - task: PublishBuildArtifacts@1
@@ -58,9 +59,9 @@ steps:
       Invoke-Git 'checkout releases/$(Build.SourceBranchName)'
       Invoke-Git 'status'
       Invoke-Git 'add -A'
-      Invoke-Git 'tag v$(MajorVersion).$(MinorVersion).$(BugfixVersion)$(VersionLabel)'
-      Invoke-Git 'commit -m ''Released v$(MajorVersion).$(MinorVersion).$(BugfixVersion)-$(VersionLabel) [skip ci]'''
-      Invoke-Git 'push'
+      Invoke-Git 'tag v$(FullVersion)'
+      Invoke-Git 'commit -m ''Released v$(FullVersion) [skip ci]'''
+      Invoke-Git 'push --tags'
       
     ignoreLASTEXITCODE: true
 
@@ -71,4 +72,4 @@ steps:
     script: |
       Import-Module -Name PoShPipeline
       $ownerAndRepo = '$(Build.Repository.Name)' -split '/'
-      New-PullRequest -Owner $ownerAndRepo[0] -Repo $ownerAndRepo[1] -AuthToken '$(GitHubAuthToken)' -Title 'Released v$(MajorVersion).$(MinorVersion).$(BugfixVersion)-$(VersionLabel)' -Head 'releases/$(Build.SourceBranchName)' -Base 'master'
+      New-PullRequest -Owner $ownerAndRepo[0] -Repo $ownerAndRepo[1] -AuthToken '$(GitHubAuthToken)' -Title 'Released v$(FullVersion)' -Head 'releases/$(Build.SourceBranchName)' -Base 'master'
