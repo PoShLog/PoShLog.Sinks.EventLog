@@ -23,7 +23,6 @@ steps:
       Import-Module -Name PoShLog.Tools
       Bootstrap '.\cd\RequiredModules.psd1'
       Expand-VersionFromBranch -BranchName $(Build.SourceBranch)
-    pwsh: true
 
 - powershell: Invoke-Build '.\src\PoShLog.Sinks.EventLog.Build.ps1' -Configuration 'Dev' -Task Clean, BuildDependencies, UpdateManifest, CopyModuleFiles, PublishModule -ModuleVersion "$(MajorVersion).$(MinorVersion).$(BugfixVersion)" -PreRelease "$(VersionLabel)"
   displayName: 'Publish PowerShell Module'
