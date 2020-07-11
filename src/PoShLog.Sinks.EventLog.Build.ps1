@@ -3,9 +3,13 @@ param (
 	[Version]$ModuleVersion,
 
 	[Parameter(Mandatory = $false)]
+	[AllowEmptyString()]
+	[AllowNull()]
 	[string]$PreRelease,
 
 	[Parameter(Mandatory = $false)]
+	[AllowEmptyString()]
+	[AllowNull()]
 	[string]$ReleaseNotes,
 
 	[Parameter(Mandatory = $false)]
@@ -32,8 +36,7 @@ task Test {
 #endregion
 
 task BuildDependencies {
-	# Import-Module PoShLog.Tools TODO publish module
-	. 'C:\Data\GIT\PoShLog\PoShLog.Tools\src\functions\Build-Dependencies.ps1'
+	Import-Module PoShLog.Tools
 	Build-Dependencies '.\Dependencies.csproj' -ModuleDirectory $PSScriptRoot -IsExtensionModule
 }
 
