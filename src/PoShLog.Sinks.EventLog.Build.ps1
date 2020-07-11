@@ -36,8 +36,7 @@ task Test {
 #endregion
 
 task BuildDependencies {
-	# Import-Module PoShLog.Tools TODO publish module
-	. 'C:\Data\GIT\PoShLog\PoShLog.Tools\src\functions\Build-Dependencies.ps1'
+	Import-Module PoShLog.Tools
 	Build-Dependencies '.\Dependencies.csproj' -ModuleDirectory $PSScriptRoot -IsExtensionModule
 }
 
