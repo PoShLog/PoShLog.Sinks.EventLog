@@ -25,8 +25,8 @@ Import-Module PoShLog
 Import-Module PoShLog.Sinks.EventLog
 
 New-Logger |
-	Add-SinkEventLog -Source 'Sample Script' -ManageEventSource $true |
-	Start-Logger
+    Add-SinkEventLog -Source 'Sample Script' -ManageEventSource $true |
+    Start-Logger
 
 Close-Logger
 ```
@@ -38,8 +38,8 @@ Import-Module PoShLog
 Import-Module PoShLog.Sinks.EventLog
 
 New-Logger |
-	Add-SinkEventLog -Source 'Sample Script' |
-	Start-Logger
+    Add-SinkEventLog -Source 'Sample Script' |
+    Start-Logger
 
 Write-InformationLog 'My message in windows event log'
 
@@ -66,4 +66,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Credits
 
+* `Serilog.Sinks.EventLog` - [serilog/serilog-sinks-eventlog](https://github.com/serilog/serilog-sinks-eventlog)
 * Icon made by [Smashicons](https://smashicons.com/) from [www.flaticon.com](https://www.flaticon.com/).

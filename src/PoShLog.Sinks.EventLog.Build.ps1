@@ -117,8 +117,8 @@ task PublishModule -If ($Configuration -eq 'Prod') {
 #region Task clean up Output folder
 task Clean {
 	# Clean output folder
-	if ((Test-Path .\output)) {
-		Remove-Item -Path .\Output -Recurse -Force
+	if ((Test-Path '.\output')) {
+		Remove-Item -Path '.\output\*' -Recurse -Force
 	}
 }
 #endregion
