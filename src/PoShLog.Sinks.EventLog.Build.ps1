@@ -36,8 +36,14 @@ task Test {
 #endregion
 
 task BuildDependencies {
-	Import-Module PoShLog.Tools
-	Build-Dependencies '.\Dependencies.csproj' -ModuleDirectory $PSScriptRoot -IsExtensionModule
+	dotnet build "$PSScriptRoot\Dependencies.csproj" --configuration Release
+	if ($LASTEXITCODE -ne 0) { throw 'Dependency build failed' }
+	foreach ($framework in @('net462', 'netstandard2.0')) {
+		$destination = Join-Path $PSScriptRoot "lib\$framework"
+		New-Item -Path $destination -ItemType Directory -Force | Out-Null
+		# Only the sink is shipped: PoShLog and the PowerShell host supply its dependencies.
+		Copy-Item "$PSScriptRoot\bin\Release\$framework\Serilog.Sinks.EventLog.dll" $destination -Force
+	}
 }
 
 #region Task to update the Module Manifest file with info from the Changelog in Readme.
@@ -64,7 +70,7 @@ task UpdateManifest {
 			$manifest = Test-ModuleManifest -Path $manifestFile
 		}
 
-		$ReleaseNotes = "$($manifest.PrivateData.PSData.ProjectUri)/blob/master/releaseNotes/v$($ModuleVersion).md"
+		$ReleaseNotes = "$($manifest.PrivateData.PSData.ProjectUri)/blob/master/CHANGELOG.md"
 	}
 
 	# Comment out Prerelease property if its empty
@@ -88,11 +94,16 @@ task CopyModuleFiles {
 	}
 
 	Copy-Item -Path '.\functions\' -Filter *.* -Recurse -Destination $moduleDirectory -Force
-	Copy-Item -Path '.\lib\' -Filter *.* -Recurse -Destination $moduleDirectory -Force
+	foreach ($framework in @('net462', 'netstandard2.0')) {
+		$destination = Join-Path $moduleDirectory "lib\$framework"
+		New-Item -Path $destination -ItemType Directory -Force | Out-Null
+		Copy-Item ".\lib\$framework\Serilog.Sinks.EventLog.dll" $destination -Force
+	}
 
 	#Copy Module Manifest files
 	Copy-Item -Path @(
 		'.\..\README.md'
+		'.\..\CHANGELOG.md'
 		".\$moduleName.psd1"
 		".\$moduleName.psm1"
 	) -Destination $moduleDirectory -Force        

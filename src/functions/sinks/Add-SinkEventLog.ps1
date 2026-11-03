@@ -1,9 +1,9 @@
 function Add-SinkEventLog {
 	<#
 	.SYNOPSIS
-		Writes log events to console host
+		Writes log events to the Windows Event Log
 	.DESCRIPTION
-		Writes log events to console host
+		Writes log events to the Windows Event Log
 	.PARAMETER LoggerConfig
 		Instance of LoggerConfiguration
 	.PARAMETER Source
@@ -41,7 +41,7 @@ function Add-SinkEventLog {
 		[Parameter(Mandatory = $false)]
 		[string]$MachineName = '.',
 		[Parameter(Mandatory = $false)]
-		[string]$ManageEventSource = $false,
+		[bool]$ManageEventSource = $false,
 		[Parameter(Mandatory = $false)]
 		[string]$OutputTemplate = '{Message}{NewLine}{Exception}{ErrorRecord}',
 		[Parameter(Mandatory = $false)]
