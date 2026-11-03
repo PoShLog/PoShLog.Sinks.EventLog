@@ -9,8 +9,8 @@ if (-not $ModuleManifest) {
     $ModuleManifest = Join-Path $PSScriptRoot '..\src\output\PoShLog.Sinks.EventLog\PoShLog.Sinks.EventLog.psd1'
 }
 Import-Module $PoShLogManifest -Force
-if ((Get-Module PoShLog).Version -ne [version]'2.3.0') {
-    throw 'Verification requires PoShLog 2.3.0.'
+if ((Get-Module PoShLog).Version.Major -ne 2) {
+    throw 'Verification requires PoShLog 2.x.'
 }
 $hostEventLog = [System.Diagnostics.EventLog].Assembly.Location
 $packagedDlls = @(Get-ChildItem (Join-Path (Split-Path $ModuleManifest) 'lib') -Recurse -Filter '*.dll')
@@ -18,8 +18,9 @@ if ($packagedDlls.Count -ne 2 -or @($packagedDlls | Where-Object { $_.Name -ne '
     throw 'The extension must package only the two edition-specific sink assemblies.'
 }
 Import-Module $ModuleManifest -Force
-if ((Get-Module PoShLog.Sinks.EventLog).Version -ne [version]'1.0.1') {
-    throw 'The staged module must be version 1.0.1.'
+$expectedVersion = [version](Import-PowerShellDataFile $ModuleManifest).ModuleVersion
+if ((Get-Module PoShLog.Sinks.EventLog).Version -ne $expectedVersion) {
+    throw "The staged module must be version $expectedVersion."
 }
 if ([System.Diagnostics.EventLog].Assembly.Location -ne $hostEventLog) {
     throw 'The extension replaced the host EventLog implementation.'
@@ -36,7 +37,7 @@ $startTime = Get-Date
 $messages = @()
 try {
     foreach ($explicitFalse in @($false, $true)) {
-        $message = "PoShLog.Sinks.EventLog 1.0.1 verification $PSEdition $([guid]::NewGuid())"
+        $message = "PoShLog.Sinks.EventLog $expectedVersion verification $PSEdition $([guid]::NewGuid())"
         $messages += $message
         $sinkParameters = @{ Source = 'Application'; LogName = 'Application' }
         if ($explicitFalse) { $sinkParameters.ManageEventSource = $false }

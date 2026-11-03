@@ -351,3 +351,4 @@ MigrationBackup/
 
 src/lib/*
 src/output/*
+/out/

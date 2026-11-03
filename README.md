@@ -56,6 +56,12 @@ These examples are just to get you started fast. For more detailed documentation
 
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
 
+## Releasing
+
+Bump `ModuleVersion` (and `PrivateData.PSData.Prerelease`, when applicable) in the manifest and add a matching `## X.Y.Z ` heading to `CHANGELOG.md`. Commit the changes, then push the tag `vX.Y.Z` to build, stage, test on Windows PowerShell 5.1 and PowerShell Core, and publish to the PowerShell Gallery. Configure the repository secret `PSGALLERY_API_KEY`; an empty secret skips publication with a notice. Manual workflow runs validate the supplied version and run all checks without publishing.
+
+For local staging, run `dotnet build src/Dependencies.csproj -c Release --configfile src/NuGet.Config`, then `./build/Stage-Module.ps1`. The destination `out/PoShLog.Sinks.EventLog` must be empty before staging.
+
 ## Authors
 
 * [**Tomáš Bouda**](http://tomasbouda.cz/)

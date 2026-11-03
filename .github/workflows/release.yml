@@ -1,0 +1,101 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Expected manifest version (e.g. 1.0.1); validates and tests only
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: pwsh
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Validate release version
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+        run: |
+          if ($env:GITHUB_EVENT_NAME -eq 'push') {
+            if ($env:GITHUB_REF_NAME -cnotmatch '^v(?<version>.+)\z') {
+              throw "Unrecognised release tag: $env:GITHUB_REF_NAME"
+            }
+            $version = $Matches.version
+          } else {
+            $version = $env:INPUT_VERSION
+          }
+          if ($version -cnotmatch '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z]+)?\z') {
+            throw "Invalid version: $version"
+          }
+          $manifest = Import-PowerShellDataFile ./src/PoShLog.Sinks.EventLog.psd1
+          $expected = [string]$manifest.ModuleVersion
+          if ($manifest.PrivateData.PSData.Prerelease) {
+            $expected += '-' + $manifest.PrivateData.PSData.Prerelease
+          }
+          if ($expected -cne $version) {
+            throw "Version $version does not match the committed manifest ($expected)."
+          }
+          if (-not (Select-String -Path ./CHANGELOG.md -Pattern ('^## ' + [regex]::Escape($version) + ' '))) {
+            throw "CHANGELOG.md has no section for $version."
+          }
+          Write-Output "Validated PoShLog.Sinks.EventLog $version"
+      - name: Build dependencies
+        run: |
+          dotnet build src/Dependencies.csproj -c Release --configfile src/NuGet.Config
+          if ($LASTEXITCODE -ne 0) { throw 'Dependency build failed.' }
+      - name: Stage module
+        run: ./build/Stage-Module.ps1
+      - name: Test with Windows PowerShell 5.1
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+          Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Scope CurrentUser -Force | Out-Null
+          Install-Module Pester -RequiredVersion 5.7.1 -Repository PSGallery -Scope CurrentUser -Force -SkipPublisherCheck
+          Import-Module Pester -RequiredVersion 5.7.1
+          $result = Invoke-Pester -Path ./tests/EventLog.Tests.ps1 -PassThru
+          if ($result.FailedCount -gt 0 -or $result.PassedCount -eq 0) { throw 'Pester failed.' }
+      - name: Test with PowerShell Core
+        run: |
+          Install-Module Pester -RequiredVersion 5.7.1 -Repository PSGallery -Scope CurrentUser -Force -SkipPublisherCheck
+          Import-Module Pester -RequiredVersion 5.7.1
+          $result = Invoke-Pester -Path ./tests/EventLog.Tests.ps1 -PassThru
+          if ($result.FailedCount -gt 0 -or $result.PassedCount -eq 0) { throw 'Pester failed.' }
+      - name: Save PoShLog 2.x from the Gallery
+        run: |
+          $moduleRoot = Join-Path $env:RUNNER_TEMP 'gallery-modules'
+          New-Item $moduleRoot -ItemType Directory -Force | Out-Null
+          Save-Module PoShLog -MaximumVersion 2.99 -Repository PSGallery -Path $moduleRoot -ErrorAction Stop
+          $manifest = @(Get-ChildItem (Join-Path $moduleRoot 'PoShLog') -Recurse -Filter PoShLog.psd1)
+          if ($manifest.Count -ne 1) { throw 'Expected one saved PoShLog manifest.' }
+          "POSHLOG_MANIFEST=$($manifest[0].FullName)" >> $env:GITHUB_ENV
+          "PSModulePath=$moduleRoot$([IO.Path]::PathSeparator)$env:PSModulePath" >> $env:GITHUB_ENV
+      - name: Verify staged module with Windows PowerShell 5.1
+        shell: powershell
+        run: ./tests/Verify-StagedModule.ps1 -PoShLogManifest $env:POSHLOG_MANIFEST -ModuleManifest ./out/PoShLog.Sinks.EventLog/PoShLog.Sinks.EventLog.psd1
+      - name: Verify staged module with PowerShell Core
+        run: ./tests/Verify-StagedModule.ps1 -PoShLogManifest $env:POSHLOG_MANIFEST -ModuleManifest ./out/PoShLog.Sinks.EventLog/PoShLog.Sinks.EventLog.psd1
+      - name: Publish tagged module to PowerShell Gallery
+        if: github.event_name == 'push'
+        shell: powershell
+        env:
+          PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:PSGALLERY_API_KEY)) {
+            Write-Output '::notice::PSGALLERY_API_KEY is empty; skipping publication.'
+            exit 0
+          }
+          Publish-Module -Path ./out/PoShLog.Sinks.EventLog -Repository PSGallery -NuGetApiKey $env:PSGALLERY_API_KEY -Force -ErrorAction Stop
