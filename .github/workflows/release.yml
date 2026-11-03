@@ -82,7 +82,8 @@ jobs:
           $manifest = @(Get-ChildItem (Join-Path $moduleRoot 'PoShLog') -Recurse -Filter PoShLog.psd1)
           if ($manifest.Count -ne 1) { throw 'Expected one saved PoShLog manifest.' }
           "POSHLOG_MANIFEST=$($manifest[0].FullName)" >> $env:GITHUB_ENV
-          "PSModulePath=$moduleRoot$([IO.Path]::PathSeparator)$env:PSModulePath" >> $env:GITHUB_ENV
+          # Only the publish step adds this folder to PSModulePath; a pwsh-shaped path would leak into Windows PowerShell 5.1.
+          "POSHLOG_GALLERY_MODULES=$moduleRoot" >> $env:GITHUB_ENV
       - name: Verify staged module with Windows PowerShell 5.1
         shell: powershell
         run: ./tests/Verify-StagedModule.ps1 -PoShLogManifest $env:POSHLOG_MANIFEST -ModuleManifest ./out/PoShLog.Sinks.EventLog/PoShLog.Sinks.EventLog.psd1
@@ -90,7 +91,8 @@ jobs:
         run: ./tests/Verify-StagedModule.ps1 -PoShLogManifest $env:POSHLOG_MANIFEST -ModuleManifest ./out/PoShLog.Sinks.EventLog/PoShLog.Sinks.EventLog.psd1
       - name: Publish tagged module to PowerShell Gallery
         if: github.event_name == 'push'
-        shell: powershell
+        # pwsh: its PowerShellGet 2.x publishes without the nuget.exe bootstrap of Windows PowerShell 5.1.
+        shell: pwsh
         env:
           PSGALLERY_API_KEY: ${{ secrets.PSGALLERY_API_KEY }}
         run: |
@@ -98,4 +100,6 @@ jobs:
             Write-Output '::notice::PSGALLERY_API_KEY is empty; skipping publication.'
             exit 0
           }
+          # Publish-Module resolves RequiredModules (PoShLog 2.x) from PSModulePath.
+          $env:PSModulePath = $env:POSHLOG_GALLERY_MODULES + [IO.Path]::PathSeparator + $env:PSModulePath
           Publish-Module -Path ./out/PoShLog.Sinks.EventLog -Repository PSGallery -NuGetApiKey $env:PSGALLERY_API_KEY -Force -ErrorAction Stop

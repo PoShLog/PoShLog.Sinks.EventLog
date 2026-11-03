@@ -2,11 +2,11 @@
 
 Date: 2026-11-03
 
-Status: Accepted
+Status: Proposed
 
 ## Context
 
-The standalone EventLog extension needs a repeatable release path for PoShLog 2.x. Tomas approved tag-triggered PowerShell Gallery releases on 2026-11-03; creating tags and configuring the secret remain separate manual steps.
+The standalone EventLog extension needs a repeatable release path for PoShLog 2.x. Tomáš approved tag-triggered PowerShell Gallery releases on 2026-11-03; creating tags and configuring the secret remain separate manual steps.
 
 ## Decision
 
