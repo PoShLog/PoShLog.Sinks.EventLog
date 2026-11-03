@@ -3,6 +3,9 @@ name: Release
 on:
   push:
     tags: ['v*']
+    # TEMPORARY: validate-only dry run on the release branch (workflow_dispatch needs the file on master);
+    # remove before merging to master.
+    branches: [codex/eventlog-1.0.1]
   workflow_dispatch:
     inputs:
       version:
@@ -29,21 +32,24 @@ jobs:
         env:
           INPUT_VERSION: ${{ inputs.version }}
         run: |
-          if ($env:GITHUB_EVENT_NAME -eq 'push') {
+          $manifest = Import-PowerShellDataFile ./src/PoShLog.Sinks.EventLog.psd1
+          $expected = [string]$manifest.ModuleVersion
+          if ($manifest.PrivateData.PSData.Prerelease) {
+            $expected += '-' + $manifest.PrivateData.PSData.Prerelease
+          }
+          if ($env:GITHUB_REF -like 'refs/tags/*') {
             if ($env:GITHUB_REF_NAME -cnotmatch '^v(?<version>.+)\z') {
               throw "Unrecognised release tag: $env:GITHUB_REF_NAME"
             }
             $version = $Matches.version
+          } elseif ($env:GITHUB_EVENT_NAME -eq 'push') {
+            # Branch pushes validate and test the committed manifest version; they never publish.
+            $version = $expected
           } else {
             $version = $env:INPUT_VERSION
           }
           if ($version -cnotmatch '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z]+)?\z') {
             throw "Invalid version: $version"
-          }
-          $manifest = Import-PowerShellDataFile ./src/PoShLog.Sinks.EventLog.psd1
-          $expected = [string]$manifest.ModuleVersion
-          if ($manifest.PrivateData.PSData.Prerelease) {
-            $expected += '-' + $manifest.PrivateData.PSData.Prerelease
           }
           if ($expected -cne $version) {
             throw "Version $version does not match the committed manifest ($expected)."
@@ -90,7 +96,7 @@ jobs:
       - name: Verify staged module with PowerShell Core
         run: ./tests/Verify-StagedModule.ps1 -PoShLogManifest $env:POSHLOG_MANIFEST -ModuleManifest ./out/PoShLog.Sinks.EventLog/PoShLog.Sinks.EventLog.psd1
       - name: Publish tagged module to PowerShell Gallery
-        if: github.event_name == 'push'
+        if: startsWith(github.ref, 'refs/tags/v')
         # pwsh: its PowerShellGet 2.x publishes without the nuget.exe bootstrap of Windows PowerShell 5.1.
         shell: pwsh
         env:
